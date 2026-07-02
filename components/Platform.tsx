@@ -28,9 +28,10 @@ export function Platform() {
                   Built to run real work, at scale, under 1 second.
                 </h2>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/60">
-                  Every agent we ship runs on our edge orchestration layer —
-                  event-driven, observable, and fault-tolerant. Fast enough for
-                  live conversations, reliable enough for production.
+                  Every chatbot, receptionist, and pipeline we ship runs on our
+                  edge orchestration layer — event-driven, observable, and
+                  fault-tolerant. Fast enough for live conversations, reliable
+                  enough for production.
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3">

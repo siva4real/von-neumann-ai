@@ -1,10 +1,10 @@
 import {
-  Workflow,
+  Clapperboard,
+  Share2,
   Bot,
-  Plug,
-  Gauge,
-  ShieldCheck,
-  Radio,
+  PhoneCall,
+  BarChart3,
+  ScanEye,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,9 +23,9 @@ export const hero = {
   title: ["Automation that", "builds itself."],
   highlight: "builds itself.",
   subtitle:
-    "von Neumann designs, deploys, and operates AI agents that run your workflows end to end — self-replicating systems that scale from a single task to your whole operation.",
+    "von Neumann builds the AI that grows your audience and runs your operations — from viral video and hands-off social media to custom chatbots, AI receptionists, and computer-vision systems trained on your business.",
   primaryCta: { label: "Book a call", href: "#contact" },
-  secondaryCta: { label: "See how it works", href: "#process" },
+  secondaryCta: { label: "Explore what we build", href: "#services" },
   install: "npx create-vn-agent@latest",
 };
 
@@ -48,34 +48,34 @@ export interface Capability {
 
 export const capabilities: Capability[] = [
   {
-    icon: Workflow,
-    title: "Workflow automation",
-    body: "We map the busywork and hand it to agents — intake, routing, data entry, reporting, follow-ups. The work runs itself.",
+    icon: Clapperboard,
+    title: "Viral video production",
+    body: "We script, generate, and edit short-form video built to travel — hooks, captions, and cuts tuned to how each platform actually rewards content.",
+  },
+  {
+    icon: Share2,
+    title: "Social media on autopilot",
+    body: "Your channels, run for you. Planning, posting, and community replies across every platform — a consistent presence without the daily grind.",
   },
   {
     icon: Bot,
-    title: "Custom AI agents",
-    body: "Purpose-built agents that reason over your data, call your tools, and take action with human checkpoints where it matters.",
+    title: "Custom AI chatbots",
+    body: "Assistants trained on your company's own knowledge that answer customers or your team accurately — around the clock, in your voice, wired into your tools.",
   },
   {
-    icon: Plug,
-    title: "Systems integration",
-    body: "One unified layer across your CRM, inbox, docs, and databases. Your stack, connected and orchestrated end to end.",
+    icon: PhoneCall,
+    title: "AI receptionist",
+    body: "A voice agent that answers every call, books appointments, and routes requests — never misses a caller, never leaves anyone on hold.",
   },
   {
-    icon: Gauge,
-    title: "Real-time operations",
-    body: "Event-driven pipelines that respond the moment something changes — no polling, no lag, no dropped work.",
+    icon: BarChart3,
+    title: "Data analysis & insights",
+    body: "We turn scattered business data into ongoing, decision-ready insight — the numbers that show what's working and exactly what to do next.",
   },
   {
-    icon: ShieldCheck,
-    title: "Governed by design",
-    body: "Every action is scoped, logged, and reversible. Approvals, audit trails, and guardrails baked into every deployment.",
-  },
-  {
-    icon: Radio,
-    title: "Fully managed",
-    body: "We don't just ship and leave. We monitor, tune, and evolve your agents as your business changes.",
+    icon: ScanEye,
+    title: "Computer vision units",
+    body: "Vision systems that watch what matters — counting, inspecting, and monitoring in real time, deployed on-site or at the edge.",
   },
 ];
 
@@ -89,22 +89,22 @@ export const steps: Step[] = [
   {
     no: "01",
     title: "Map",
-    body: "We audit your workflows and find the highest-leverage tasks to automate first — measured in hours saved, not hype.",
+    body: "We learn your business and pinpoint the highest-leverage wins first — the content that should ship and the work that should run itself.",
   },
   {
     no: "02",
     title: "Build",
-    body: "We design and deploy agents against your real tools and data, with guardrails and human approvals wired in.",
+    body: "We design and deploy against your real tools, data, and brand — video engines, chatbots, receptionists, and vision systems, with humans in the loop where it counts.",
   },
   {
     no: "03",
     title: "Replicate",
-    body: "Once a pattern works, it spreads. Each agent becomes the template for the next — automation that compounds.",
+    body: "Once a pattern works, it spreads. Each agent and format becomes the template for the next — leverage that compounds.",
   },
   {
     no: "04",
     title: "Operate",
-    body: "We run it in production, monitor every action, and keep improving as your business and your stack evolve.",
+    body: "We run it in production, watch every result, and keep tuning as your audience, your data, and your business evolve.",
   },
 ];
 
@@ -118,7 +118,7 @@ export const stats = [
 export const security = {
   eyebrow: "Trust & Control",
   title: "Your data. Your rules. Locked down by design.",
-  body: "Every agent runs in an isolated, least-privilege environment. Only the endpoints it needs are exposed, every action is logged, and traffic is encrypted in transit.",
+  body: "Your company's knowledge and customer data stay yours. Every agent runs in an isolated, least-privilege environment — only the endpoints it needs are exposed, every action is logged, and traffic is encrypted in transit.",
   points: [
     {
       title: "Least-privilege access",
@@ -138,11 +138,11 @@ export const security = {
 export const caseStudy = {
   eyebrow: "Case Study",
   client: "Meridian",
-  body: "How we helped Meridian's ops team clear a 6,000-ticket backlog and cut response time by 74% with a fleet of support agents.",
+  body: "How a custom support chatbot and AI receptionist cleared Meridian's inbox backlog and cut response time by 74% — while never missing a call.",
   metrics: [
     { value: "74%", label: "faster response" },
-    { value: "6,000+", label: "tickets cleared" },
-    { value: "3 wks", label: "to production" },
+    { value: "6,000+", label: "conversations handled" },
+    { value: "3 wks", label: "to launch" },
   ],
 };
 

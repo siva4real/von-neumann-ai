@@ -13,12 +13,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "von Neumann — AI Automation Agency",
   description:
-    "von Neumann builds self-replicating AI automation for teams. We design, deploy, and operate agents that run your workflows end to end.",
+    "von Neumann builds AI that grows your audience and runs your operations — viral video, hands-off social media, custom chatbots, AI receptionists, data analysis, and computer vision.",
   metadataBase: new URL("https://vonneumann.ai"),
   openGraph: {
     title: "von Neumann — AI Automation Agency",
     description:
-      "Self-replicating AI automation. We design, deploy, and operate agents that run your workflows end to end.",
+      "AI that grows your audience and runs your operations — viral video, social media on autopilot, custom chatbots, AI receptionists, data analysis, and computer vision.",
     type: "website",
   },
 };

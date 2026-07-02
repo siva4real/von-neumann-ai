@@ -1,17 +1,19 @@
 // Firebase client initialization.
-// Note: these values are *public* client identifiers (they are shipped in the
-// browser bundle by design and are safe to commit) — they are not secrets.
-// Security is enforced by Firebase Auth authorized domains + backend rules.
+// Note: these NEXT_PUBLIC_* values are *public* client identifiers — they ship
+// in the browser bundle by design and are not secrets. They're read from env so
+// they aren't committed to source; real security is enforced by Firebase Auth
+// authorized domains, an HTTP-referrer restriction on the API key, and backend
+// (Firestore/Storage) rules.
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCRNFlVqDZ2rk7dErmoxhlzJE5HCO2xYD8",
-  authDomain: "von-neumann-ai.firebaseapp.com",
-  projectId: "von-neumann-ai",
-  storageBucket: "von-neumann-ai.firebasestorage.app",
-  messagingSenderId: "229459574858",
-  appId: "1:229459574858:web:7b1810434e32c884cb66b3",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);

@@ -8,11 +8,12 @@ export function Capabilities() {
         <div className="max-w-2xl">
           <div className="eyebrow mb-5">What we do</div>
           <h2 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
-            One team to design, ship, and run your automation.
+            AI that grows your audience and runs your operations.
           </h2>
           <p className="mt-5 text-lg text-secondary">
-            We handle the whole loop — from finding what to automate to keeping
-            it running in production. No hand-offs, no half-built pilots.
+            Two pillars, one team. We create content that spreads and build the
+            automations that quietly handle the rest — designed, deployed, and
+            managed end to end.
           </p>
         </div>
 

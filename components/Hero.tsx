@@ -117,18 +117,18 @@ function HeroPanel() {
             <span className="text-[#bb88ff]">const</span> agent ={" "}
             <span className="text-[#00bbff]">vn</span>.
             <span className="text-[#ffab2a]">deploy</span>({"{"}
-            {"\n"} name: <span className="text-[#77dddd]">&quot;ops-runner&quot;</span>,
-            {"\n"} tools: [inbox, crm, sheets],
+            {"\n"} name: <span className="text-[#77dddd]">&quot;front-desk&quot;</span>,
+            {"\n"} tools: [calls, calendar, crm],
             {"\n"} onEvent: <span className="text-[#ffab2a]">handle</span>,
             {"\n"}
             {"}"});
           </pre>
 
           <div className="mt-5 space-y-2.5">
-            <LogLine tag="task" color="#00bbff" text="new lead — Acme Corp" />
-            <LogLine tag="plan" color="#bb88ff" text="enrich · qualify · route" />
-            <LogLine tag="act" color="#ffab2a" text="drafted reply, updated CRM" />
-            <LogLine tag="done" color="#28c840" text="handed to human · 820ms" />
+            <LogLine tag="call" color="#00bbff" text="inbound — new booking" />
+            <LogLine tag="plan" color="#bb88ff" text="greet · qualify · schedule" />
+            <LogLine tag="act" color="#ffab2a" text="booked Thu 2pm · sent confirm" />
+            <LogLine tag="done" color="#28c840" text="logged to CRM · 640ms" />
           </div>
         </div>
 
