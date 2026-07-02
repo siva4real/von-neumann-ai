@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { nav } from "@/lib/content";
 import { Menu, X } from "lucide-react";
+import { AuthButton } from "./AuthButton";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -45,7 +46,8 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-3 md:flex">
+          <AuthButton />
           <a href={nav.cta.href} className="btn-primary">
             {nav.cta.label}
           </a>
@@ -80,6 +82,9 @@ export function Navbar() {
             >
               {nav.cta.label}
             </a>
+            <div className="mt-2 flex justify-center border-t border-line pt-3">
+              <AuthButton />
+            </div>
           </div>
         </div>
       )}
