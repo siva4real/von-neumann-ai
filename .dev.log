@@ -1,0 +1,15 @@
+
+> von-neumann-ai@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1930ms
+(node:20076) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ○ Compiling / ...
+ ✓ Compiled / in 4.5s (1271 modules)
+ GET / 200 in 4710ms
+ GET / 200 in 125ms

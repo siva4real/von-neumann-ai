@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #f5f5f7;
+  --ink: #0a0a0a;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-container px-6 md:px-8;
+  }
+
+  /* Mono micro-label used as section eyebrows */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-secondary;
+  }
+
+  .eyebrow::before {
+    content: "";
+    @apply h-[6px] w-[6px] rounded-full bg-amber;
+  }
+
+  /* Pill button — primary (dark) */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-ink px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-black hover:shadow-lg hover:shadow-black/10 active:scale-[0.98];
+  }
+
+  /* Pill button — secondary (light outline) */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill border border-line bg-surface px-5 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary/30 hover:shadow-sm active:scale-[0.98];
+  }
+
+  .card {
+    @apply rounded-card border border-line bg-surface;
+  }
+
+  /* Spectrum gradient text */
+  .spectrum-text {
+    background: linear-gradient(
+      92deg,
+      #ffab2a 0%,
+      #ff8866 26%,
+      #bb88ff 55%,
+      #00bbff 82%,
+      #77dddd 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .spectrum-bar {
+    background: linear-gradient(
+      92deg,
+      #ffab2a,
+      #ff8866,
+      #bb88ff,
+      #00bbff,
+      #77dddd
+    );
+  }
+
+  /* faint grid backdrop for dark showcase panels */
+  .grid-lines {
+    background-image: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0.05) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+}
+
+/* thin scrollbar for code panels */
+.code-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.code-scroll::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 999px;
+}
