@@ -10,13 +10,21 @@ import {
   FileText,
   Wand2,
 } from "lucide-react";
-import {
-  suggestedPrompts,
-  type ChatMessage,
-  type ChatAttachment,
-  type Chat,
-} from "@/lib/dashboardData";
-import type { Project } from "@/lib/dashboardData";
+import type {
+  ChatMessage,
+  ChatAttachment,
+  Chat,
+  Project,
+} from "@/lib/types";
+import { useAuth } from "@/components/AuthProvider";
+import { useMessages, appendMessage } from "@/lib/db";
+
+const suggestedPrompts = [
+  "Plan next week's content",
+  "Draft a launch teaser",
+  "Summarize last month's performance",
+  "Turn this blog post into 3 Reels",
+];
 
 function AttachmentChip({ a }: { a: ChatAttachment }) {
   const Icon = a.kind === "video" ? Video : a.kind === "image" ? ImageIcon : FileText;
@@ -35,7 +43,7 @@ function AttachmentChip({ a }: { a: ChatAttachment }) {
   );
 }
 
-function Bubble({ m, project }: { m: ChatMessage; project: Project }) {
+function Bubble({ m }: { m: ChatMessage }) {
   const isUser = m.role === "user";
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
@@ -74,44 +82,33 @@ function Bubble({ m, project }: { m: ChatMessage; project: Project }) {
 }
 
 export function ChatView({ project, chat }: { project: Project; chat: Chat }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { user } = useAuth();
+  const { data: messages } = useMessages(project.id, chat.id);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // reset thread when switching chat
-  useEffect(() => {
-    setMessages(chat.messages);
-    setDraft("");
-    setThinking(false);
-  }, [chat.id, chat.messages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, thinking]);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     const value = text.trim();
-    if (!value) return;
-    const now = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    setMessages((prev) => [
-      ...prev,
-      { id: `u-${Date.now()}`, role: "user", content: value, time: now },
-    ]);
+    if (!value || !user) return;
     setDraft("");
+    await appendMessage(user.uid, project.id, chat.id, {
+      role: "user",
+      content: value,
+    });
     setThinking(true);
-    setTimeout(() => {
+    // TODO: replace this canned reply with a real AI response in the next pass.
+    setTimeout(async () => {
+      await appendMessage(user.uid, project.id, chat.id, {
+        role: "agent",
+        content:
+          "On it — I'll draft a plan for that, generate the first cut, and drop the assets in your project folder. You'll get a preview to approve before anything goes live.",
+      });
       setThinking(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: "agent",
-          content:
-            "On it — I'll draft a plan for that, generate the first cut, and drop the assets in your project folder. You'll get a preview to approve before anything goes live.",
-          time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-        },
-      ]);
     }, 1100);
   };
 
@@ -136,7 +133,7 @@ export function ChatView({ project, chat }: { project: Project; chat: Chat }) {
           )}
 
           {messages.map((m) => (
-            <Bubble key={m.id} m={m} project={project} />
+            <Bubble key={m.id} m={m} />
           ))}
 
           {thinking && (

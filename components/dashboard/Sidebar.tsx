@@ -11,7 +11,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
-import { projects, chatsByProject } from "@/lib/dashboardData";
+import type { Project, Chat } from "@/lib/types";
 import type { DashTab } from "./types";
 
 /* --------------------------------------------------------------- */
@@ -19,11 +19,15 @@ import type { DashTab } from "./types";
 /* --------------------------------------------------------------- */
 
 function ProjectRail({
+  projects,
   activeProjectId,
   onSelectProject,
+  onNewProject,
 }: {
-  activeProjectId: string;
+  projects: Project[];
+  activeProjectId: string | null;
   onSelectProject: (id: string) => void;
+  onNewProject: () => void;
 }) {
   const { user } = useAuth();
 
@@ -73,6 +77,7 @@ function ProjectRail({
         })}
 
         <button
+          onClick={onNewProject}
           className="mt-1 grid h-10 w-10 place-items-center rounded-xl border border-dashed border-line text-muted transition-colors hover:border-primary/40 hover:text-primary"
           aria-label="New project"
           title="New project"
@@ -110,23 +115,23 @@ function ProjectRail({
 /* --------------------------------------------------------------- */
 
 function ProjectPanel({
-  activeProjectId,
+  project,
+  chats,
   activeChatId,
   activeTab,
   onSelectChat,
   onNewChat,
   onSelectTab,
 }: {
-  activeProjectId: string;
-  activeChatId: string;
+  project: Project | null;
+  chats: Chat[];
+  activeChatId: string | null;
   activeTab: DashTab;
   onSelectChat: (chatId: string) => void;
   onNewChat: () => void;
   onSelectTab: (tab: DashTab) => void;
 }) {
   const { user } = useAuth();
-  const project = projects.find((p) => p.id === activeProjectId) ?? projects[0];
-  const chats = chatsByProject[activeProjectId] ?? [];
 
   const library: { key: DashTab; label: string; icon: typeof Users }[] = [
     { key: "assets", label: "Assets", icon: FolderOpen },
@@ -139,16 +144,18 @@ function ProjectPanel({
       {/* Project header */}
       <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
         <span
-          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${project.gradient} text-[12px] font-bold text-white shadow-sm`}
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${
+            project?.gradient ?? "from-violet to-cyan"
+          } text-[12px] font-bold text-white shadow-sm`}
         >
-          {project.monogram}
+          {project?.monogram ?? "··"}
         </span>
         <div className="min-w-0">
           <span className="block truncate text-[14px] font-semibold leading-tight tracking-tight text-primary">
-            {project.name}
+            {project?.name ?? "Loading…"}
           </span>
           <span className="block truncate text-[11px] text-muted">
-            {project.handle}
+            {project?.handle ?? ""}
           </span>
         </div>
       </div>
@@ -263,22 +270,31 @@ function ProjectPanel({
 /* --------------------------------------------------------------- */
 
 export function Sidebar(props: {
-  activeProjectId: string;
-  activeChatId: string;
+  projects: Project[];
+  chats: Chat[];
+  activeProjectId: string | null;
+  activeChatId: string | null;
   activeTab: DashTab;
   onSelectProject: (id: string) => void;
   onSelectChat: (chatId: string) => void;
   onNewChat: () => void;
   onSelectTab: (tab: DashTab) => void;
+  onNewProject: () => void;
 }) {
+  const project =
+    props.projects.find((p) => p.id === props.activeProjectId) ?? null;
+
   return (
     <>
       <ProjectRail
+        projects={props.projects}
         activeProjectId={props.activeProjectId}
         onSelectProject={props.onSelectProject}
+        onNewProject={props.onNewProject}
       />
       <ProjectPanel
-        activeProjectId={props.activeProjectId}
+        project={project}
+        chats={props.chats}
         activeChatId={props.activeChatId}
         activeTab={props.activeTab}
         onSelectChat={props.onSelectChat}

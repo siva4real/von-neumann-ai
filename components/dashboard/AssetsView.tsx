@@ -17,14 +17,12 @@ import {
   User,
   Calendar,
   Tag,
+  Trash2,
 } from "lucide-react";
-import {
-  assetsByProject,
-  type Asset,
-  type AssetType,
-  type AssetStatus,
-} from "@/lib/dashboardData";
-import type { Project } from "@/lib/dashboardData";
+import type { Asset, AssetType, AssetStatus, Project } from "@/lib/types";
+import { useAuth } from "@/components/AuthProvider";
+import { useAssets, createAsset, deleteAsset } from "@/lib/db";
+import { Modal, Field, inputClass } from "@/components/dashboard/Modal";
 
 const typeIcon: Record<AssetType, typeof Video> = {
   video: Video,
@@ -92,7 +90,15 @@ function DetailField({
   );
 }
 
-function Drawer({ asset, onClose }: { asset: Asset; onClose: () => void }) {
+function Drawer({
+  asset,
+  onClose,
+  onDelete,
+}: {
+  asset: Asset;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
   return (
     <>
       <div
@@ -196,6 +202,13 @@ function Drawer({ asset, onClose }: { asset: Asset; onClose: () => void }) {
           >
             <Download size={15} />
           </button>
+          <button
+            onClick={onDelete}
+            className="grid h-10 w-10 place-items-center rounded-xl border border-line text-secondary transition-colors hover:border-coral/40 hover:text-coral"
+            aria-label="Delete asset"
+          >
+            <Trash2 size={15} />
+          </button>
         </div>
       </aside>
     </>
@@ -203,17 +216,26 @@ function Drawer({ asset, onClose }: { asset: Asset; onClose: () => void }) {
 }
 
 export function AssetsView({ project }: { project: Project }) {
+  const { user } = useAuth();
+  const { data: all } = useAssets(project.id);
   const [filter, setFilter] = useState<AssetType | "all">("all");
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Asset | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
 
-  const all = assetsByProject[project.id] ?? [];
+  const selected = all.find((a) => a.id === selectedId) ?? null;
 
   useEffect(() => {
-    setSelected(null);
+    setSelectedId(null);
     setFilter("all");
     setQuery("");
   }, [project.id]);
+
+  const removeAsset = async (id: string) => {
+    if (!user) return;
+    setSelectedId(null);
+    await deleteAsset(user.uid, project.id, id);
+  };
 
   const visible = useMemo(
     () =>
@@ -241,7 +263,10 @@ export function AssetsView({ project }: { project: Project }) {
                 {all.length} items · everything uploaded and generated for {project.name}
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-xl bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-all hover:bg-black active:scale-[0.99]">
+            <button
+              onClick={() => setShowUpload(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-all hover:bg-black active:scale-[0.99]"
+            >
               <Upload size={15} />
               Upload
             </button>
@@ -293,7 +318,7 @@ export function AssetsView({ project }: { project: Project }) {
                 return (
                   <button
                     key={asset.id}
-                    onClick={() => setSelected(asset)}
+                    onClick={() => setSelectedId(asset.id)}
                     className="group overflow-hidden rounded-xl border border-line bg-surface text-left transition-all hover:-translate-y-0.5 hover:border-primary/15 hover:shadow-lg hover:shadow-black/5"
                   >
                     <AssetThumb asset={asset} />
@@ -322,7 +347,140 @@ export function AssetsView({ project }: { project: Project }) {
         </div>
       </div>
 
-      {selected && <Drawer asset={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <Drawer
+          asset={selected}
+          onClose={() => setSelectedId(null)}
+          onDelete={() => removeAsset(selected.id)}
+        />
+      )}
+
+      {showUpload && (
+        <UploadAssetModal
+          onClose={() => setShowUpload(false)}
+          onCreate={async (input) => {
+            if (!user) return;
+            await createAsset(user.uid, project.id, input);
+            setShowUpload(false);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+const gradientChoices = [
+  "from-amber to-coral",
+  "from-coral to-violet",
+  "from-violet to-cyan",
+  "from-cyan to-teal",
+  "from-teal to-amber",
+];
+
+function UploadAssetModal({
+  onClose,
+  onCreate,
+}: {
+  onClose: () => void;
+  onCreate: (input: Omit<Asset, "id" | "createdAt">) => void | Promise<void>;
+}) {
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState<AssetType>("video");
+  const [tags, setTags] = useState("");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!title.trim() || saving) return;
+    setSaving(true);
+    try {
+      await onCreate({
+        title: title.trim(),
+        type,
+        gradient: gradientChoices[Math.floor(Math.random() * gradientChoices.length)],
+        status: "draft",
+        size: "—",
+        uploadedBy: "You",
+        date: new Date().toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        platform: [],
+        tags: tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        description: description.trim() || "Uploaded asset.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const types: AssetType[] = ["video", "image", "audio", "doc"];
+
+  return (
+    <Modal title="Upload asset" onClose={onClose}>
+      <Field label="Title">
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Launch teaser — rough cut"
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Type">
+        <div className="flex gap-1.5">
+          {types.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setType(t)}
+              className={`flex-1 rounded-lg border px-2 py-1.5 text-[12.5px] font-medium capitalize transition-colors ${
+                type === t
+                  ? "border-primary/30 bg-canvas text-primary"
+                  : "border-line text-secondary hover:text-primary"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Tags (comma-separated)">
+        <input
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="launch, teaser"
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Description (optional)">
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          placeholder="What is this asset?"
+          className={`${inputClass} resize-none`}
+        />
+      </Field>
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          onClick={onClose}
+          className="rounded-xl border border-line px-3.5 py-2 text-[13px] font-medium text-secondary transition-colors hover:text-primary"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={submit}
+          disabled={!title.trim() || saving}
+          className="rounded-xl bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-all hover:bg-black active:scale-[0.99] disabled:opacity-40"
+        >
+          {saving ? "Saving…" : "Add asset"}
+        </button>
+      </div>
+    </Modal>
   );
 }
