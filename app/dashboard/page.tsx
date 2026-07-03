@@ -12,6 +12,7 @@ import type { DashTab } from "@/components/dashboard/types";
 import { useAuth } from "@/components/AuthProvider";
 import { useProjects, useChats, createProject, createChat } from "@/lib/db";
 import { seedWorkspace } from "@/lib/seed";
+import { purgeDemoData } from "@/lib/purge";
 import { MessageSquarePlus } from "lucide-react";
 
 function FullScreenSpinner() {
@@ -31,9 +32,16 @@ export default function DashboardPage() {
     if (!authLoading && !user) router.replace("/");
   }, [authLoading, user, router]);
 
-  // Seed the workspace once, on first authenticated visit.
+  // Seed the workspace once, on first authenticated visit, then remove any
+  // pre-existing seeded mock data (one-time cleanup for accounts seeded before
+  // the cutoff in lib/purge.ts).
   useEffect(() => {
-    if (user) seedWorkspace(user.uid).catch((e) => console.error("[seed]", e));
+    if (!user) return;
+    seedWorkspace(user.uid)
+      .catch((e) => console.error("[seed]", e))
+      .finally(() => {
+        purgeDemoData(user.uid).catch((e) => console.error("[purge]", e));
+      });
   }, [user]);
 
   const { data: projects, loading: projectsLoading } = useProjects();
