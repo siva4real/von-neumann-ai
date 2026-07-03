@@ -30,6 +30,9 @@ export interface Service {
   body: string;
   features?: string[];
   cards?: ServiceFeature[];
+  /** when set, the card links through to an in-app surface */
+  href?: string;
+  cta?: string;
 }
 
 export const services: {
@@ -47,6 +50,8 @@ export const services: {
       tag: "Service 01",
       icon: Clapperboard,
       title: "Social Media Agent",
+      href: "/dashboard",
+      cta: "Open the studio",
       body: "An agent that owns your entire social presence. It creates, edits, and posts video, then manages your accounts day to day — a consistent, on-brand feed that runs without anyone lifting a finger.",
       features: [
         "Scripts, generates, and edits short-form video",

@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { services } from "@/lib/content";
 import { Reveal } from "./Reveal";
-import { Check } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 
 export function Services() {
   return (
@@ -15,9 +16,19 @@ export function Services() {
         </div>
 
         <div className="mt-14 grid gap-6 lg:grid-cols-2">
-          {services.items.map((s, i) => (
+          {services.items.map((s, i) => {
+            const CardTag = s.href ? Link : "div";
+            const cardProps = s.href ? { href: s.href } : {};
+            return (
             <Reveal key={s.title} delay={i * 0.08} className="h-full">
-              <article className="group flex h-full flex-col rounded-card border border-line bg-surface p-8 transition-colors hover:border-primary/15 md:p-10">
+              <CardTag
+                {...(cardProps as { href: string })}
+                className={`group flex h-full flex-col rounded-card border border-line bg-surface p-8 transition-all md:p-10 ${
+                  s.href
+                    ? "hover:-translate-y-0.5 hover:border-amber/40 hover:shadow-xl hover:shadow-black/5"
+                    : "hover:border-primary/15"
+                }`}
+              >
                 <div className="mb-6 flex items-center gap-4">
                   <div className="grid h-12 w-12 place-items-center rounded-xl border border-line bg-canvas text-primary transition-colors group-hover:border-amber/40">
                     <s.icon size={22} strokeWidth={1.75} />
@@ -25,6 +36,11 @@ export function Services() {
                   <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                     {s.tag}
                   </span>
+                  {s.href && (
+                    <span className="ml-auto inline-flex items-center gap-1.5 rounded-pill bg-canvas px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-secondary transition-colors group-hover:bg-ink group-hover:text-white">
+                      Live
+                    </span>
+                  )}
                 </div>
 
                 <h3 className="text-2xl font-semibold tracking-tight">
@@ -68,9 +84,20 @@ export function Services() {
                     ))}
                   </div>
                 )}
-              </article>
+
+                {s.href && (
+                  <span className="mt-8 inline-flex items-center gap-2 text-[15px] font-medium text-primary">
+                    {s.cta}
+                    <ArrowRight
+                      size={17}
+                      className="transition-transform group-hover:translate-x-1"
+                    />
+                  </span>
+                )}
+              </CardTag>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
