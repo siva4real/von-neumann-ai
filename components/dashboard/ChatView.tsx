@@ -94,22 +94,58 @@ export function ChatView({ project, chat }: { project: Project; chat: Chat }) {
 
   const send = async (text: string) => {
     const value = text.trim();
-    if (!value || !user) return;
+    if (!value || !user || thinking) return;
     setDraft("");
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      {
+        id: "pending-user",
+        role: "user",
+        content: value,
+        time: "",
+      },
+    ];
     await appendMessage(user.uid, project.id, chat.id, {
       role: "user",
       content: value,
     });
     setThinking(true);
-    // TODO: replace this canned reply with a real AI response in the next pass.
-    setTimeout(async () => {
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectName: project.name,
+          messages: nextMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+      const payload = (await response.json()) as {
+        content?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.content) {
+        throw new Error(payload.error || "The AI response failed.");
+      }
+
+      await appendMessage(user.uid, project.id, chat.id, {
+        role: "agent",
+        content: payload.content,
+      });
+    } catch (error) {
       await appendMessage(user.uid, project.id, chat.id, {
         role: "agent",
         content:
-          "On it — I'll draft a plan for that, generate the first cut, and drop the assets in your project folder. You'll get a preview to approve before anything goes live.",
+          error instanceof Error
+            ? `OpenRouter error: ${error.message}`
+            : "OpenRouter error: The AI response failed.",
       });
+    } finally {
       setThinking(false);
-    }, 1100);
+    }
   };
 
   return (
@@ -164,6 +200,7 @@ export function ChatView({ project, chat }: { project: Project; chat: Chat }) {
                 <button
                   key={p}
                   onClick={() => send(p)}
+                  disabled={thinking}
                   className="inline-flex items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-1.5 text-[12.5px] text-secondary transition-colors hover:border-amber/40 hover:text-primary"
                 >
                   <Sparkles size={12} className="text-amber" />
@@ -203,7 +240,7 @@ export function ChatView({ project, chat }: { project: Project; chat: Chat }) {
               </div>
               <button
                 onClick={() => send(draft)}
-                disabled={!draft.trim()}
+                disabled={!draft.trim() || thinking}
                 className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white transition-all enabled:hover:bg-black enabled:active:scale-95 disabled:opacity-30"
                 aria-label="Send"
               >
