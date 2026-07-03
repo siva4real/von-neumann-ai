@@ -1,15 +1,16 @@
-// One-time removal of the seeded demo dataset from a user's Firestore tree.
+// One-time full reset of a user's Firestore workspace.
 //
-// Early builds copied the mock dataset from `lib/dashboardData.ts` into every
-// user's workspace (see `lib/seed.ts`). This deletes that mock data back out for
-// accounts that were seeded before the cutoff below, targeting only the known
-// demo project ids so any real projects the user created are left untouched.
-// Guarded by a `purged` flag on the user doc (plus an in-memory lock) so it runs
-// exactly once per account.
+// Early builds copied a mock dataset from `lib/dashboardData.ts` into every
+// user's workspace (see `lib/seed.ts`). This wipes every project and all of its
+// subcollections (chats+messages, assets, accounts, campaigns) back out, leaving
+// the account with an empty-but-valid workspace. The collection layout, security
+// rules and indexes are untouched — Firestore recreates empty collections lazily
+// on the next write. Only runs for accounts seeded before the cutoff below, so
+// genuinely new signups still get the demo walkthrough. Guarded by a `purged`
+// flag on the user doc (plus an in-memory lock) so it runs once per account.
 "use client";
 
 import {
-  doc,
   getDoc,
   getDocs,
   setDoc,
@@ -20,6 +21,7 @@ import {
 import { db } from "@/lib/firebase";
 import {
   userDoc,
+  projectsCol,
   projectDoc,
   chatsCol,
   messagesCol,
@@ -27,15 +29,11 @@ import {
   accountsCol,
   campaignsCol,
 } from "@/lib/db";
-import { projects as demoProjects } from "@/lib/dashboardData";
 
-// Accounts seeded at or after this instant keep their demo data (genuinely new
-// signups still get the walkthrough); anything seeded earlier is mock data that
-// predates this change and gets purged. Milliseconds since epoch, UTC.
+// Accounts seeded at or after this instant keep their data (genuinely new
+// signups still get the walkthrough); anything seeded earlier predates this
+// reset and gets wiped. Milliseconds since epoch, UTC.
 const PURGE_CUTOFF_MS = Date.parse("2026-07-03T18:00:00Z");
-
-// The ids the seeder writes for the demo projects.
-const DEMO_PROJECT_IDS = demoProjects.map((p) => p.id);
 
 // Prevent a duplicate purge from React's double-invoked effects in dev.
 const inFlight = new Set<string>();
@@ -88,8 +86,10 @@ export async function purgeDemoData(uid: string): Promise<void> {
       return;
     }
 
-    for (const pid of DEMO_PROJECT_IDS) {
-      await purgeProject(uid, pid);
+    // Wipe every project in the workspace, not just the seeded demo ones.
+    const projectSnap = await getDocs(projectsCol(uid));
+    for (const project of projectSnap.docs) {
+      await purgeProject(uid, project.id);
     }
 
     await setDoc(
