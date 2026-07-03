@@ -8,5 +8,13 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // Shared internal asset library: metadata for org-owned assets, readable by
+    // any signed-in user. Writes are done server-side (Admin SDK / console) and
+    // are denied from the client, matching the internal/ storage prefix rule.
+    match /internalAssets/{assetId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }

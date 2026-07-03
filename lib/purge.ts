@@ -29,6 +29,7 @@ import {
   accountsCol,
   campaignsCol,
 } from "@/lib/db";
+import { deleteUserProjectAssets } from "@/lib/storage";
 
 // Accounts seeded at or after this instant keep their data (genuinely new
 // signups still get the walkthrough); anything seeded earlier predates this
@@ -61,6 +62,10 @@ async function purgeProject(uid: string, pid: string): Promise<void> {
     const snap = await getDocs(col(uid, pid));
     await deleteRefs(snap.docs.map((d) => d.ref));
   }
+
+  // Stored asset files live outside Firestore; clear them too so a purge leaves
+  // no orphaned objects in the bucket.
+  await deleteUserProjectAssets(uid, pid);
 
   // Finally the project document itself.
   await deleteRefs([projectDoc(uid, pid)]);

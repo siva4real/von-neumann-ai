@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Video } from "lucide-react";
 import { AuthButton } from "./AuthButton";
 
 export function Navbar() {
@@ -31,7 +33,16 @@ export function Navbar() {
           </span>
         </a>
 
-        <AuthButton />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/hire"
+            className="hidden items-center gap-2 rounded-pill border border-line bg-surface px-4 py-2 text-sm font-medium text-primary transition-all hover:border-amber/40 hover:shadow-sm active:scale-[0.98] sm:inline-flex"
+          >
+            <Video size={15} className="text-amber" />
+            Hire creators
+          </Link>
+          <AuthButton />
+        </div>
       </nav>
     </header>
   );

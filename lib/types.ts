@@ -88,6 +88,13 @@ export interface Asset {
   description: string;
   transcript?: string;
   createdAt?: Timestamp;
+  /* --- Cloud Storage backing (absent on metadata-only/seed assets) --- */
+  /** full object path in the bucket, used for download + delete */
+  storagePath?: string;
+  /** long-lived download URL for rendering/downloading the file */
+  downloadURL?: string;
+  /** stored MIME type */
+  contentType?: string;
 }
 
 /* ------------------------------------------------------------------ */

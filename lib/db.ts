@@ -21,6 +21,7 @@ import {
   type QueryConstraint,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { deleteStoredObject } from "@/lib/storage";
 import { useAuth } from "@/components/AuthProvider";
 import type {
   AdCampaign,
@@ -56,6 +57,11 @@ export const accountsCol = (uid: string, pid: string) =>
   collection(projectDoc(uid, pid), "accounts");
 export const campaignsCol = (uid: string, pid: string) =>
   collection(projectDoc(uid, pid), "campaigns");
+
+// Shared, org-owned asset library — a single top-level collection, readable by
+// any signed-in user and written only server-side (see firestore.rules). Its
+// file bytes live under the `internal/` storage prefix.
+export const internalAssetsCol = () => collection(db, "internalAssets");
 
 /* ------------------------------------------------------------------ */
 /*  Display-string helpers                                             */
@@ -150,6 +156,15 @@ export function useAssets(pid: string | null) {
     (uid) => (pid ? assetsCol(uid, pid) : null),
     [orderBy("createdAt", "desc")],
     [pid]
+  );
+}
+
+export function useInternalAssets() {
+  // Not project-scoped: the same shared library is visible from every project.
+  return useCollectionData<Asset>(
+    () => internalAssetsCol(),
+    [orderBy("createdAt", "desc")],
+    []
   );
 }
 
@@ -248,7 +263,16 @@ export async function createAsset(
   return ref.id;
 }
 
-export async function deleteAsset(uid: string, pid: string, aid: string) {
+export async function deleteAsset(
+  uid: string,
+  pid: string,
+  aid: string,
+  storagePath?: string
+) {
+  // Remove the backing file first (best-effort), then the metadata doc. Ordering
+  // this way avoids a dangling storage object if the doc delete succeeds but the
+  // object delete is never attempted.
+  await deleteStoredObject(storagePath);
   await deleteDoc(doc(assetsCol(uid, pid), aid));
 }
 

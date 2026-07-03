@@ -18,11 +18,26 @@ import {
   Calendar,
   Tag,
   Trash2,
+  Library,
+  FileUp,
 } from "lucide-react";
 import type { Asset, AssetType, AssetStatus, Project } from "@/lib/types";
 import { useAuth } from "@/components/AuthProvider";
-import { useAssets, createAsset, deleteAsset } from "@/lib/db";
+import {
+  useAssets,
+  useInternalAssets,
+  createAsset,
+  deleteAsset,
+} from "@/lib/db";
+import {
+  uploadUserAsset,
+  assetTypeFromFile,
+  formatBytes,
+  type StoredFile,
+} from "@/lib/storage";
 import { Modal, Field, inputClass } from "@/components/dashboard/Modal";
+
+type Scope = "mine" | "internal";
 
 const typeIcon: Record<AssetType, typeof Video> = {
   video: Video,
@@ -47,6 +62,9 @@ const filters: { key: AssetType | "all"; label: string }[] = [
 
 function AssetThumb({ asset, size = "card" }: { asset: Asset; size?: "card" | "hero" }) {
   const Icon = typeIcon[asset.type];
+  // Real image files render their own preview; everything else falls back to the
+  // gradient + type-icon placeholder.
+  const showImage = asset.type === "image" && !!asset.downloadURL;
   return (
     <div
       className={`relative flex items-center justify-center overflow-hidden bg-gradient-to-br ${asset.gradient} ${
@@ -54,7 +72,14 @@ function AssetThumb({ asset, size = "card" }: { asset: Asset; size?: "card" | "h
       }`}
     >
       <div className="absolute inset-0 grid-lines opacity-30" />
-      {asset.type === "video" ? (
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={asset.downloadURL}
+          alt={asset.title}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : asset.type === "video" ? (
         <span className="grid h-11 w-11 place-items-center rounded-full bg-white/20 text-white backdrop-blur-sm ring-1 ring-white/40">
           <Play size={18} className="translate-x-0.5" fill="currentColor" />
         </span>
@@ -94,10 +119,12 @@ function Drawer({
   asset,
   onClose,
   onDelete,
+  readOnly = false,
 }: {
   asset: Asset;
   onClose: () => void;
   onDelete: () => void;
+  readOnly?: boolean;
 }) {
   return (
     <>
@@ -196,19 +223,35 @@ function Drawer({
             <Send size={14} />
             Schedule post
           </button>
-          <button
-            className="grid h-10 w-10 place-items-center rounded-xl border border-line text-secondary transition-colors hover:border-primary/25 hover:text-primary"
-            aria-label="Download"
-          >
-            <Download size={15} />
-          </button>
-          <button
-            onClick={onDelete}
-            className="grid h-10 w-10 place-items-center rounded-xl border border-line text-secondary transition-colors hover:border-coral/40 hover:text-coral"
-            aria-label="Delete asset"
-          >
-            <Trash2 size={15} />
-          </button>
+          {asset.downloadURL ? (
+            <a
+              href={asset.downloadURL}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="grid h-10 w-10 place-items-center rounded-xl border border-line text-secondary transition-colors hover:border-primary/25 hover:text-primary"
+              aria-label="Download"
+            >
+              <Download size={15} />
+            </a>
+          ) : (
+            <button
+              disabled
+              className="grid h-10 w-10 place-items-center rounded-xl border border-line text-muted opacity-40"
+              aria-label="No file to download"
+            >
+              <Download size={15} />
+            </button>
+          )}
+          {!readOnly && (
+            <button
+              onClick={onDelete}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-line text-secondary transition-colors hover:border-coral/40 hover:text-coral"
+              aria-label="Delete asset"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
         </div>
       </aside>
     </>
@@ -217,12 +260,15 @@ function Drawer({
 
 export function AssetsView({ project }: { project: Project }) {
   const { user } = useAuth();
-  const { data: all } = useAssets(project.id);
+  const { data: mine } = useAssets(project.id);
+  const { data: internal } = useInternalAssets();
+  const [scope, setScope] = useState<Scope>("mine");
   const [filter, setFilter] = useState<AssetType | "all">("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
 
+  const all = scope === "mine" ? mine : internal;
   const selected = all.find((a) => a.id === selectedId) ?? null;
 
   useEffect(() => {
@@ -231,10 +277,15 @@ export function AssetsView({ project }: { project: Project }) {
     setQuery("");
   }, [project.id]);
 
-  const removeAsset = async (id: string) => {
+  // Selection is keyed to the active scope; clear it when switching libraries.
+  useEffect(() => {
+    setSelectedId(null);
+  }, [scope]);
+
+  const removeAsset = async (asset: Asset) => {
     if (!user) return;
     setSelectedId(null);
-    await deleteAsset(user.uid, project.id, id);
+    await deleteAsset(user.uid, project.id, asset.id, asset.storagePath);
   };
 
   const visible = useMemo(
@@ -260,16 +311,43 @@ export function AssetsView({ project }: { project: Project }) {
                 Assets
               </h2>
               <p className="text-[13px] text-secondary">
-                {all.length} items · everything uploaded and generated for {project.name}
+                {scope === "mine"
+                  ? `${all.length} items · everything uploaded and generated for ${project.name}`
+                  : `${all.length} items · shared library available to your whole team`}
               </p>
             </div>
-            <button
-              onClick={() => setShowUpload(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-all hover:bg-black active:scale-[0.99]"
-            >
-              <Upload size={15} />
-              Upload
-            </button>
+            {scope === "mine" && (
+              <button
+                onClick={() => setShowUpload(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-all hover:bg-black active:scale-[0.99]"
+              >
+                <Upload size={15} />
+                Upload
+              </button>
+            )}
+          </div>
+
+          {/* Scope: personal project assets vs. the shared internal library */}
+          <div className="mt-4 flex items-center gap-1 rounded-xl border border-line bg-surface p-1 sm:inline-flex">
+            {(
+              [
+                { key: "mine", label: "My assets", icon: HardDrive },
+                { key: "internal", label: "Internal library", icon: Library },
+              ] as const
+            ).map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setScope(s.key)}
+                className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors sm:flex-none ${
+                  scope === s.key
+                    ? "bg-canvas text-primary"
+                    : "text-secondary hover:text-primary"
+                }`}
+              >
+                <s.icon size={13} />
+                {s.label}
+              </button>
+            ))}
           </div>
 
           {/* Toolbar */}
@@ -304,11 +382,19 @@ export function AssetsView({ project }: { project: Project }) {
           {visible.length === 0 ? (
             <div className="mt-16 flex flex-col items-center text-center">
               <span className="grid h-12 w-12 place-items-center rounded-xl border border-line bg-surface text-muted">
-                <Upload size={20} />
+                {scope === "mine" ? <Upload size={20} /> : <Library size={20} />}
               </span>
-              <p className="mt-3 text-[14px] font-medium text-primary">No assets here yet</p>
+              <p className="mt-3 text-[14px] font-medium text-primary">
+                {query || filter !== "all"
+                  ? "Nothing matches"
+                  : scope === "mine"
+                  ? "No assets here yet"
+                  : "The internal library is empty"}
+              </p>
               <p className="text-[13px] text-secondary">
-                Upload a file or ask the agent to generate one.
+                {scope === "mine"
+                  ? "Upload a file or ask the agent to generate one."
+                  : "Shared assets are added by your team from the admin tools."}
               </p>
             </div>
           ) : (
@@ -350,16 +436,19 @@ export function AssetsView({ project }: { project: Project }) {
       {selected && (
         <Drawer
           asset={selected}
+          readOnly={scope === "internal"}
           onClose={() => setSelectedId(null)}
-          onDelete={() => removeAsset(selected.id)}
+          onDelete={() => removeAsset(selected)}
         />
       )}
 
-      {showUpload && (
+      {showUpload && user && (
         <UploadAssetModal
           onClose={() => setShowUpload(false)}
+          upload={(file, onProgress) =>
+            uploadUserAsset(user.uid, project.id, file, onProgress)
+          }
           onCreate={async (input) => {
-            if (!user) return;
             await createAsset(user.uid, project.id, input);
             setShowUpload(false);
           }}
@@ -380,26 +469,49 @@ const gradientChoices = [
 function UploadAssetModal({
   onClose,
   onCreate,
+  upload,
 }: {
   onClose: () => void;
   onCreate: (input: Omit<Asset, "id" | "createdAt">) => void | Promise<void>;
+  upload: (
+    file: File,
+    onProgress: (fraction: number) => void
+  ) => Promise<StoredFile>;
 }) {
+  const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [type, setType] = useState<AssetType>("video");
+  const [type, setType] = useState<AssetType>("image");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const onPick = (f: File | null) => {
+    if (!f) return;
+    setFile(f);
+    setError(null);
+    setType(assetTypeFromFile(f));
+    // Prefill the title from the filename (sans extension) if untouched.
+    setTitle((cur) => cur || f.name.replace(/\.[^.]+$/, ""));
+  };
 
   const submit = async () => {
     if (!title.trim() || saving) return;
     setSaving(true);
+    setError(null);
     try {
+      // Upload the file first (if one was chosen), then persist metadata that
+      // points at the stored object. No file → a metadata-only draft, matching
+      // the previous behavior.
+      const stored = file ? await upload(file, setProgress) : null;
       await onCreate({
         title: title.trim(),
         type,
-        gradient: gradientChoices[Math.floor(Math.random() * gradientChoices.length)],
-        status: "draft",
-        size: "—",
+        gradient:
+          gradientChoices[Math.floor(Math.random() * gradientChoices.length)],
+        status: stored ? "ready" : "draft",
+        size: stored ? stored.size : "—",
         uploadedBy: "You",
         date: new Date().toLocaleDateString(undefined, {
           month: "short",
@@ -412,16 +524,62 @@ function UploadAssetModal({
           .map((t) => t.trim())
           .filter(Boolean),
         description: description.trim() || "Uploaded asset.",
+        ...(stored
+          ? {
+              storagePath: stored.storagePath,
+              downloadURL: stored.downloadURL,
+              contentType: stored.contentType,
+            }
+          : {}),
       });
+    } catch (err) {
+      console.error("[assets] upload failed", err);
+      setError("Upload failed. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
   const types: AssetType[] = ["video", "image", "audio", "doc"];
+  const pct = Math.round(progress * 100);
 
   return (
     <Modal title="Upload asset" onClose={onClose}>
+      <Field label="File">
+        <label
+          className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-3.5 py-3 text-[13px] transition-colors ${
+            file
+              ? "border-primary/30 bg-canvas text-primary"
+              : "border-line text-secondary hover:border-primary/25 hover:text-primary"
+          }`}
+        >
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-surface text-muted">
+            <FileUp size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            {file ? (
+              <>
+                <span className="block truncate font-medium">{file.name}</span>
+                <span className="text-[11px] text-muted">
+                  {formatBytes(file.size)} · {type}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="block font-medium">Choose a file</span>
+                <span className="text-[11px] text-muted">
+                  Video, image, audio or document · up to 500 MB
+                </span>
+              </>
+            )}
+          </span>
+          <input
+            type="file"
+            className="hidden"
+            onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+          />
+        </label>
+      </Field>
       <Field label="Title">
         <input
           autoFocus
@@ -466,6 +624,20 @@ function UploadAssetModal({
           className={`${inputClass} resize-none`}
         />
       </Field>
+
+      {saving && file && (
+        <div className="mt-1">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-canvas">
+            <div
+              className="h-full rounded-full bg-ink transition-[width] duration-150"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-muted">Uploading… {pct}%</p>
+        </div>
+      )}
+      {error && <p className="mt-1 text-[12px] text-coral">{error}</p>}
+
       <div className="mt-4 flex justify-end gap-2">
         <button
           onClick={onClose}
@@ -478,7 +650,7 @@ function UploadAssetModal({
           disabled={!title.trim() || saving}
           className="rounded-xl bg-ink px-3.5 py-2 text-[13px] font-medium text-white transition-all hover:bg-black active:scale-[0.99] disabled:opacity-40"
         >
-          {saving ? "Saving…" : "Add asset"}
+          {saving ? "Uploading…" : file ? "Upload asset" : "Add asset"}
         </button>
       </div>
     </Modal>

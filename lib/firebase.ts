@@ -7,6 +7,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,6 +23,11 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 export const auth = getAuth(app);
 
 export const db = getFirestore(app);
+
+// Cloud Storage: the physical bucket named by NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET.
+// Logical "buckets" are path prefixes within it (see lib/storage.ts), each gated
+// by its own rule in storage.rules.
+export const storage = getStorage(app);
 
 export const googleProvider = new GoogleAuthProvider();
 // Always show the account chooser rather than silently reusing a session.

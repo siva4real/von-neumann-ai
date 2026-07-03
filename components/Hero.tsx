@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Copy } from "lucide-react";
+import { ArrowRight, Copy, Video } from "lucide-react";
 import { hero } from "@/lib/content";
 
 export function Hero() {
@@ -23,6 +24,28 @@ export function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="mb-6"
+          >
+            <Link
+              href="/hire"
+              className="group inline-flex items-center gap-2 rounded-pill border border-line bg-surface py-1 pl-1.5 pr-3 text-[13px] font-medium text-primary shadow-sm transition-all hover:border-amber/40 hover:shadow-md active:scale-[0.98]"
+            >
+              <span className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-2 py-0.5 text-[11px] font-semibold text-white">
+                <Video size={12} className="text-amber" />
+                New
+              </span>
+              Hire videographers &amp; creators
+              <ArrowRight
+                size={14}
+                className="text-muted transition-transform group-hover:translate-x-0.5"
+              />
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.06 }}
             className="eyebrow mb-6"
           >
             {hero.eyebrow}
